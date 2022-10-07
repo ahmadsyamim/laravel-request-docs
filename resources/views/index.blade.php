@@ -21,8 +21,8 @@
       <script src="https://unpkg.com/string-similarity@4.0.2/umd/string-similarity.min.js" referrerpolicy="no-referrer"></script>
 
       <script src="https://unpkg.com/vue-markdown@2.2.4/dist/vue-markdown.js"></script>
+      <script src="https://unpkg.com/vue-session@1.0.0"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/sql-formatter/3.1.0/sql-formatter.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-      <script src="{{asset('./vendor/request-docs/dist/app.js')}}"></script>
       <style>
         [v-cloak] {
             display: none;
@@ -647,9 +647,14 @@
                 filterTerm: ''
             },
             created: function () {
-                axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                axios.defaults.headers.common['Authorization'] = 'Bearer '
-                this.requestHeaders = JSON.stringify(axios.defaults.headers.common, null, 2)
+                this.$session.start();
+                if (this.$session.get('requestHeaders')) {
+                    this.requestHeaders = this.$session.get('requestHeaders')
+                } else {
+                    axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    axios.defaults.headers.common['Authorization'] = 'Bearer '
+                    this.requestHeaders = JSON.stringify(axios.defaults.headers.common, null, 2)
+                }
             },
             methods: {
                 highlightSidebar(idx) {
@@ -684,9 +689,11 @@
                     }
 
                     try {
+                        this.$session.set('requestHeaders',this.requestHeaders);
                         axios.defaults.headers.common = JSON.parse(this.requestHeaders)
                         axios.defaults.headers.common['X-Request-LRD'] = 'lrd'
                     } catch (e) {
+                        this.$session.remove('requestHeaders');
                         doc.response = "Cannot parse JSON request headers"
                         return
                     }
