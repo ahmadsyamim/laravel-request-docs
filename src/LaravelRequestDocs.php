@@ -11,7 +11,7 @@ use Throwable;
 
 class LaravelRequestDocs
 {
-    public function getDocs()
+    public function getDocs(): array
     {
         $docs = [];
         $excludePatterns = config('request-docs.hide_matching') ?? [];
@@ -53,7 +53,9 @@ class LaravelRequestDocs
         foreach ($methods as $method) {
             foreach ($docs as $key => $doc) {
                 if (in_array($method, $doc['methods'])) {
-                    $sorted[] = $doc;
+                    if (!in_array($doc, $sorted)) {
+                        $sorted[] = $doc;
+                    }
                 }
             }
         }
@@ -66,6 +68,7 @@ class LaravelRequestDocs
         $routes = collect(Route::getRoutes());
         $onlyRouteStartWith = config('request-docs.only_route_uri_start_with') ?? '';
 
+        /** @var \Illuminate\Routing\Route $route */
         foreach ($routes as $route) {
             if ($onlyRouteStartWith && !Str::startsWith($route->uri, $onlyRouteStartWith)) {
                 continue;
@@ -73,17 +76,18 @@ class LaravelRequestDocs
 
             try {
                 $actionControllerName = $route->action['controller'] ?? $route->action["0"];
-                /// Show Pnly Controller Name
+                /// Show Only Controller Name
                 $controllerFullPath = explode('@', $actionControllerName)[0];
                 $getStartWord = strrpos(explode('@', $actionControllerName)[0], '\\') + 1;
                 $controllerName = substr($controllerFullPath, $getStartWord);
 
                 $method = explode('@', $actionControllerName)[1] ?? '__invoke';
                 $httpMethod = $route->methods[0];
+
                 foreach ($controllersInfo as $controllerInfo) {
                     if ($controllerInfo['uri'] == $route->uri && $controllerInfo['httpMethod'] == $httpMethod) {
                         // is duplicate
-                        continue;
+                        continue 2;
                     }
                 }
 
@@ -111,14 +115,23 @@ class LaravelRequestDocs
         return $controllersInfo;
     }
 
-    public function appendRequestRules(array $controllersInfo)
+    public function appendRequestRules(array $controllersInfo): array
     {
         foreach ($controllersInfo as $index => $controllerInfo) {
             $controller       = $controllerInfo['controller_full_path'];
             $method           = $controllerInfo['method'];
-            $reflectionMethod = new ReflectionMethod($controller, $method);
+            try {
+                $reflectionMethod = new ReflectionMethod($controller, $method);
+            } catch (Throwable $e) {
+                // Skip to next if controller is not exists.
+                if (config('request-docs.debug')) {
+                    throw $e; // @codeCoverageIgnore
+                }
+                continue;
+            }
             $params           = $reflectionMethod->getParameters();
             $customRules = $this->customParamsDocComment($reflectionMethod->getDocComment());
+            $controllersInfo[$index]['rules'] = [];
 
             foreach ($params as $param) {
                 if (!$param->getType()) {
@@ -133,18 +146,15 @@ class LaravelRequestDocs
                     //throw $th;
                 }
 
-                if ($requestClass && method_exists($requestClass, 'rules')) {
-                    try {
-                        $controllersInfo[$index]['rules'] = $this->flattenRules($requestClass->rules());
-                    } catch (Throwable $e) {
-                        // disabled. This only works when the rules are defined as 'required|integer' and that too in single line
-                        // doesn't work well when the same rule is defined as array ['required', 'integer'] or in multiple lines such as
-                        // If your rules are not populated using this library, then fix your rule to only throw validation errors and not throw exceptions
-                        // such as 404, 500 inside the request class.
-                        $controllersInfo[$index]['rules'] = $this->rulesByRegex($requestClassName);
-
-                        if (config('request-docs.debug')) {
-                            throw $e;
+                foreach (config('request-docs.request_methods') as $requestMethod) {
+                    if ($requestClass && method_exists($requestClass, $requestMethod)) {
+                        try {
+                            $controllersInfo[$index]['rules'] = array_merge($controllersInfo[$index]['rules'], $this->flattenRules($requestClass->$requestMethod()));
+                        } catch (Throwable $e) {
+                            $controllersInfo[$index]['rules'] = array_merge($controllersInfo[$index]['rules'], $this->rulesByRegex($requestClassName, $requestMethod));
+                            if (config('request-docs.debug')) {
+                                throw $e;
+                            }
                         }
                     }
                 }
@@ -180,16 +190,6 @@ class LaravelRequestDocs
         return $lrdComment;
     }
 
-    // get text between first and last tag
-    private function getTextBetweenTags($docComment, $tag1, $tag2)
-    {
-        $docComment = trim($docComment);
-        $start = strpos($docComment, $tag1);
-        $end = strpos($docComment, $tag2);
-        $text = substr($docComment, $start + strlen($tag1), $end - $start - strlen($tag1));
-        return $text;
-    }
-
     public function flattenRules($mixedRules)
     {
         $rules = [];
@@ -211,9 +211,9 @@ class LaravelRequestDocs
         return $rules;
     }
 
-    public function rulesByRegex($requestClassName)
+    public function rulesByRegex($requestClassName, $methodName)
     {
-        $data = new ReflectionMethod($requestClassName, 'rules');
+        $data = new ReflectionMethod($requestClassName, $methodName);
         $lines = file($data->getFileName());
         $rules = [];
 

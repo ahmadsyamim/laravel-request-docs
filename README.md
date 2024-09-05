@@ -1,3 +1,6 @@
+# MODERNIZATION OF UI RENEWAL is in PROGRESS https://github.com/rakutentech/laravel-request-docs/pull/103
+We request to have code freeze on new pull requests, and request to please submit issues with regards to the UI that we can cover in the new UI renewal.
+
 <p align="center">
   <a href="https://github.com/rakutentech/laravel-request-docs">
     <img alt="Laravel Request Docs" src="https://imgur.com/9eDTUaI.png" width="360">
@@ -35,10 +38,10 @@ Read more: https://medium.com/web-developer/laravel-automatically-generate-api-d
 
 ## Requirements
 
-| Lang    | Versions          |
-| :------ | :---------------- |
-| PHP     | 7.4 or 8.0 or 8.1 |
-| Laravel | 6.* or 8.* or 9.* |
+| Lang    | Versions                  |
+| :------ |:--------------------------|
+| PHP     | 7.4 or 8.0 or 8.1 or 8.2  |
+| Laravel | 6.* or 8.* or 9.* or 10.* |
 
 # Installation
 
@@ -175,4 +178,6 @@ Fixing lints
 - v1.22 Boolean|File|Image support
 - v1.22 Boolean|File|Image support
 - v1.23 Bug fix for lrd doc block #76
+- v1.27 A few fixes on width and added request_methods
+- v1.30 Minor search box filter added
 

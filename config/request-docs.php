@@ -1,10 +1,10 @@
 <?php
 
 return [
-     // change it to true will make lrd to throw exception if rules in request class need to be changed
-     // keep it false
-    'debug'  => false,
-    'document_name'  => 'LRD',
+    // change it to true will make lrd to throw exception if rules in request class need to be changed
+    // keep it false
+    'debug' => false,
+    'document_name' => 'LRD',
 
     /*
     * Route where request docs will be served from
@@ -15,6 +15,21 @@ return [
         //Example
         // \App\Http\Middleware\NotFoundWhenProduction::class,
     ],
+
+    /*
+    * Default headers shown on the request headers editor
+    */
+    'default_request_headers' => [
+        'Accept' => 'application/json',
+        'X-CSRF-TOKEN' => '',
+        'Authorization' => 'Bearer',
+    ],
+
+    /*
+    * Show development relevant metadata on endpoints
+    */
+    'show_development_metadata' => true,
+
     /**
      * Path to to static HTML if using command line.
      */
@@ -23,32 +38,42 @@ return [
     /**
      * Sorting route by and there is two types default(route methods), route_names.
      */
-    'sort_by' => 'default',
+    'sort_by' => 'route_names',
 
     //Use only routes where ->uri start with next string Using Str::startWith( . e.g. - /api/mobile
     'only_route_uri_start_with' => '',
 
     'hide_matching' => [
-        "#^telescope#",
-        "#^docs#",
-        "#^request-docs#",
+        '#^telescope#',
+        '#^docs#',
+        '#^request-docs#',
+        '#^api-docs#',
+        '#^sanctum#',
+        '#^_ignition#',
+        '#^_tt#',
     ],
 
-    "open_api" => [
+    'request_methods' => [
+        'rules',
+        'onCreate',
+        'onUpdate',
+    ],
+
+    'open_api' => [
         // default version that this library provides
-        "version" => "3.0.0",
+        'version' => '3.0.0',
         // changeable
-        "document_version" => "1.0.0",
+        'document_version' => '1.0.0',
         // license that you want to display
-        "license" => "Apache 2.0",
-        "license_url" => "https://www.apache.org/licenses/LICENSE-2.0.html",
-        "server_url" => env('APP_URL', 'http://localhost'),
+        'license' => 'Apache 2.0',
+        'license_url' => 'https://www.apache.org/licenses/LICENSE-2.0.html',
+        'server_url' => env('APP_URL', 'http://localhost'),
 
         // for now putting default responses for all. This can be changed later based on specific needs
-        "responses" => [
+        'responses' => [
             '200' => [
                 'description' => 'Successful operation',
-                'content'     => [
+                'content' => [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -58,7 +83,7 @@ return [
             ],
             '400' => [
                 'description' => 'Bad Request',
-                'content'     => [
+                'content' => [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -68,7 +93,7 @@ return [
             ],
             '401' => [
                 'description' => 'Unauthorized',
-                'content'     => [
+                'content' => [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -78,7 +103,7 @@ return [
             ],
             '403' => [
                 'description' => 'Forbidden',
-                'content'     => [
+                'content' => [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -88,7 +113,7 @@ return [
             ],
             '404' => [
                 'description' => 'Not Found',
-                'content'     => [
+                'content' => [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -98,7 +123,7 @@ return [
             ],
             '422' => [
                 'description' => 'Unprocessable Entity',
-                'content'     => [
+                'content' => [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -108,7 +133,7 @@ return [
             ],
             '500' => [
                 'description' => 'Internal Server Error',
-                'content'     => [
+                'content' => [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -118,7 +143,7 @@ return [
             ],
             'default' => [
                 'description' => 'Unexpected error',
-                'content'     => [
+                'content' => [
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
@@ -127,5 +152,5 @@ return [
                 ],
             ],
         ],
-    ]
+    ],
 ];
